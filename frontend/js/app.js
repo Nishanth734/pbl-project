@@ -1,3 +1,7 @@
+// 6. app.js
+// This is the core frontend logic file for the client app.
+// It handles GPS geolocation, dynamic service searches, 
+// and manages the interactive booking modal for users.
 /**
  * HOME SERVICES - Main Application
  */
@@ -132,6 +136,7 @@
     }
 
     // GPS Location Capture
+    // This function captures the user's GPS coordinates using the Browser Geolocation API
     function captureGPSLocation() {
         if (!navigator.geolocation) {
             showAlert('Geolocation not supported by your browser', 'error');
@@ -177,6 +182,7 @@
         );
     }
 
+
     function finishLocationCapture() {
         localStorage.setItem('userLocation', JSON.stringify(state.userLocation));
         showLocationSuccess(state.userLocation.address);
@@ -212,6 +218,7 @@
     }
 
     // Search Providers
+    // This function handles the provider search by sending a request with filters and location
     function searchProviders() {
         if (!state.userLocation.latitude) {
             showAlert('Please set your location first', 'warning');
@@ -250,6 +257,7 @@
                 console.error('Search error:', err);
             });
     }
+
 
     // Render Providers
     function renderProviders(providers) {

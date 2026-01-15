@@ -3,64 +3,48 @@ const mongoose = require('mongoose');
 const providerSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: [true, 'Provider name is required'],
+        required: [true, 'Business name is required'],
         trim: true,
-        maxlength: 200
+        maxlength: [200, 'Name cannot exceed 200 characters']
     },
     phone: {
         type: String,
         required: [true, 'Phone number is required'],
+        unique: true,
         trim: true
     },
-    service: {
-        type: String,
-        required: [true, 'Service type is required'],
-        enum: [
-            'plumbing',
-            'electrical',
-            'cleaning',
-            'painting',
-            'carpentry',
-            'appliance-repair',
-            'gardening',
-            'pest-control',
-            'moving',
-            'handyman'
-        ]
+    services: {
+        type: [String],
+        required: [true, 'At least one service is required'],
+        validate: {
+            validator: function (v) {
+                return v && v.length > 0;
+            },
+            message: 'Select at least one service'
+        }
     },
     price: {
         type: Number,
         required: [true, 'Price is required'],
-        min: 0
+        min: [1, 'Price must be at least 1']
     },
-    // Human-readable address for display
     address: {
         type: String,
-        required: [true, 'Address is required']
+        default: 'Location captured via GPS'
     },
-    // Geospatial coordinates for distance calculations
     location: {
         type: {
             type: String,
             enum: ['Point'],
-            required: true,
             default: 'Point'
         },
         coordinates: {
-            type: [Number], // [longitude, latitude]
-            required: [true, 'Coordinates are required'],
-            validate: {
-                validator: function (coords) {
-                    return coords.length === 2 &&
-                        coords[0] >= -180 && coords[0] <= 180 &&
-                        coords[1] >= -90 && coords[1] <= 90;
-                },
-                message: 'Invalid coordinates'
-            }
+            type: [Number],
+            required: true
         }
     },
     rating: {
-        average: { type: Number, default: 0, min: 0, max: 5 },
+        average: { type: Number, default: 0 },
         count: { type: Number, default: 0 }
     },
     isActive: {
@@ -73,9 +57,8 @@ const providerSchema = new mongoose.Schema({
     }
 });
 
-// CRITICAL: 2dsphere index for geospatial queries
 providerSchema.index({ location: '2dsphere' });
-providerSchema.index({ service: 1 });
-providerSchema.index({ isActive: 1 });
+providerSchema.index({ phone: 1 });
+providerSchema.index({ services: 1 });
 
 module.exports = mongoose.model('Provider', providerSchema);

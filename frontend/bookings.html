@@ -13,10 +13,10 @@
         <div class="container">
             <a href="/" class="logo">🏠 HomeServices</a>
             <ul class="nav-links">
-                <li><a href="/">Find Services</a></li>
-                <li><a href="/provider-register">Become a Provider</a></li>
-                <li><a href="/provider-dashboard">Provider Dashboard</a></li>
-                <li><a href="/bookings" class="active">My Bookings</a></li>
+                <li><a href="/">Home</a></li>
+                <li><a href="/provider-register">Register</a></li>
+                <li><a href="/provider-dashboard">Provider</a></li>
+                <li><a href="/bookings" class="active">Bookings</a></li>
             </ul>
         </div>
     </nav>
@@ -29,60 +29,225 @@
 
         <div id="alertContainer"></div>
 
-        <div class="card mb-3" style="max-width:500px">
-            <h4 class="mb-2">🔐 Enter Your Phone to View Bookings</h4>
-            <div class="form-group mb-2">
-                <input type="tel" id="viewerPhone" placeholder="Enter the phone used during booking">
+        <div class="card" style="max-width:450px;margin-bottom:2rem">
+            <h4>🔐 Enter Your Phone</h4>
+            <div class="form-group" style="margin:1rem 0">
+                <input type="tel" id="phoneInput" placeholder="Enter phone used during booking">
             </div>
-            <button id="loadBookingsBtn" class="btn btn-primary">Load My Bookings</button>
+            <button id="loadBtn" class="btn btn-primary btn-block">Load My Bookings</button>
         </div>
 
-        <div id="bookingsLoading" class="loading-overlay hidden">
+        <div id="loading" class="loading-overlay hidden">
             <div class="spinner spinner-lg"></div>
-            <p>Loading bookings...</p>
         </div>
 
-        <div id="bookingsEmpty" class="empty-state hidden">
+        <div id="empty" class="empty-state hidden">
             <div class="icon">📭</div>
             <h3>No Bookings Found</h3>
-            <p>You haven't made any bookings yet.</p>
-            <a href="/" class="btn btn-primary mt-2">Find Services</a>
+            <a href="/" class="btn btn-primary" style="margin-top:1rem">Find Services</a>
         </div>
 
-        <div id="bookingsList" class="bookings-list"></div>
+        <div id="bookingsList"></div>
     </main>
 
     <!-- Review Modal -->
     <div id="reviewModal" class="modal-overlay">
         <div class="modal">
             <div class="modal-header">
-                <h3>⭐ Leave a Review</h3>
-                <button type="button" class="modal-close" id="closeReviewBtn">&times;</button>
+                <h3>⭐ Leave Review</h3>
+                <button class="modal-close" onclick="closeReview()">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label>Your Rating *</label>
-                    <div class="star-rating" id="starRating">
-                        <span class="star" data-rating="1">★</span>
-                        <span class="star" data-rating="2">★</span>
-                        <span class="star" data-rating="3">★</span>
-                        <span class="star" data-rating="4">★</span>
-                        <span class="star" data-rating="5">★</span>
+                    <label>Rating</label>
+                    <div id="stars" style="font-size:2rem;cursor:pointer">
+                        <span data-r="1">☆</span>
+                        <span data-r="2">☆</span>
+                        <span data-r="3">☆</span>
+                        <span data-r="4">☆</span>
+                        <span data-r="5">☆</span>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="reviewComment">Your Review *</label>
-                    <textarea id="reviewComment" placeholder="Share your experience..." rows="4"></textarea>
+                    <label>Your Review</label>
+                    <textarea id="reviewText" rows="4" placeholder="Share your experience..."></textarea>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline" id="cancelReviewBtn">Cancel</button>
-                <button type="button" class="btn btn-primary" id="submitReviewBtn">Submit Review</button>
+                <button class="btn btn-outline" onclick="closeReview()">Cancel</button>
+                <button class="btn btn-primary" id="submitReviewBtn">Submit</button>
             </div>
         </div>
     </div>
 
-    <script src="js/bookings.js"></script>
+    <div class="customer-care-footer">
+        📞 Need Help? Call: <a href="tel:7975205146">7975205146</a>
+    </div>
+
+    <script>
+        (function () {
+            var API = '/api';
+            var currentBookingId = null;
+            var currentRating = 0;
+            var userPhone = '';
+            var userName = '';
+
+            // Load saved phone
+            try {
+                var saved = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                if (saved.phone) {
+                    document.getElementById('phoneInput').value = saved.phone;
+                    loadBookings();
+                }
+            } catch (e) { }
+
+            document.getElementById('loadBtn').addEventListener('click', loadBookings);
+            document.getElementById('phoneInput').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') loadBookings();
+            });
+
+            // Stars
+            document.getElementById('stars').addEventListener('click', function (e) {
+                var r = e.target.getAttribute('data-r');
+                if (r) {
+                    currentRating = parseInt(r);
+                    updateStars();
+                }
+            });
+
+            function updateStars() {
+                document.querySelectorAll('#stars span').forEach(function (s, i) {
+                    s.textContent = i < currentRating ? '★' : '☆';
+                    s.style.color = i < currentRating ? '#F59E0B' : '#D1D5DB';
+                });
+            }
+
+            function loadBookings() {
+                var phone = document.getElementById('phoneInput').value.trim();
+                if (!phone) { alert('Enter phone number'); return; }
+
+                userPhone = phone;
+                localStorage.setItem('userInfo', JSON.stringify({ phone: phone }));
+
+                document.getElementById('bookingsList').innerHTML = '';
+                document.getElementById('empty').classList.add('hidden');
+                document.getElementById('loading').classList.remove('hidden');
+
+                fetch(API + '/bookings/user/' + encodeURIComponent(phone))
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        document.getElementById('loading').classList.add('hidden');
+                        if (data.success && data.data.length > 0) {
+                            userName = data.data[0].userName || 'Customer';
+                            renderBookings(data.data);
+                        } else {
+                            document.getElementById('empty').classList.remove('hidden');
+                        }
+                    });
+            }
+
+            function renderBookings(bookings) {
+                var html = '';
+                bookings.forEach(function (b) {
+                    var p = b.providerId || {};
+                    var canChat = (b.status === 'accepted' || b.status === 'completed');
+                    var canComplete = (b.status === 'accepted');
+                    var canCancel = (b.status === 'requested' || b.status === 'accepted');
+                    var canReview = (b.status === 'completed' && !b.hasReview);
+
+                    html += '<div class="booking-card">' +
+                        '<div class="booking-header">' +
+                        '<div><h4>' + esc(p.name || 'Provider') + '</h4>' +
+                        '<small style="color:#6b7280">' + formatDate(b.createdAt) + '</small></div>' +
+                        '<span class="booking-status ' + b.status + '">' + b.status + '</span>' +
+                        '</div>' +
+                        '<div class="booking-body">' +
+                        '<div class="booking-details">' +
+                        '<div class="booking-detail"><span class="label">Service</span><span class="value">' + esc(b.service) + '</span></div>' +
+                        '<div class="booking-detail"><span class="label">Price</span><span class="value" style="color:#10B981">₹' + b.price + '</span></div>' +
+                        '<div class="booking-detail"><span class="label">Provider Phone</span><span class="value">' + esc(p.phone || 'N/A') + '</span></div>' +
+                        '<div class="booking-detail"><span class="label">Address</span><span class="value">' + esc(p.address || 'N/A') + '</span></div>' +
+                        '</div>' +
+                        '<div class="booking-actions">' +
+                        (canChat ? '<a href="/chat?bookingId=' + b._id + '&userType=client&userId=' + encodeURIComponent(userPhone) + '&userName=' + encodeURIComponent(userName) + '" class="btn btn-secondary btn-sm">💬 Chat</a>' : '') +
+                        (canComplete ? '<button class="btn btn-secondary btn-sm" onclick="updateStatus(\'' + b._id + '\',\'completed\')">✅ Complete</button>' : '') +
+                        (canCancel ? '<button class="btn btn-danger btn-sm" onclick="updateStatus(\'' + b._id + '\',\'cancelled\')">❌ Cancel</button>' : '') +
+                        (canReview ? '<button class="btn btn-primary btn-sm" onclick="openReview(\'' + b._id + '\')">⭐ Review</button>' : '') +
+                        (b.hasReview ? '<span style="color:#10B981">✓ Reviewed</span>' : '') +
+                        '</div>' +
+                        '</div>' +
+                        '</div>';
+                });
+                document.getElementById('bookingsList').innerHTML = html;
+            }
+
+            window.updateStatus = function (id, status) {
+                if (!confirm(status === 'cancelled' ? 'Cancel booking?' : 'Mark as completed?')) return;
+
+                fetch(API + '/bookings/' + id + '/status', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: status })
+                })
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        if (data.success) loadBookings();
+                        else alert(data.message);
+                    });
+            };
+
+            window.openReview = function (id) {
+                currentBookingId = id;
+                currentRating = 0;
+                updateStars();
+                document.getElementById('reviewText').value = '';
+                document.getElementById('reviewModal').classList.add('active');
+            };
+
+            window.closeReview = function () {
+                document.getElementById('reviewModal').classList.remove('active');
+            };
+
+            document.getElementById('submitReviewBtn').addEventListener('click', function () {
+                var comment = document.getElementById('reviewText').value.trim();
+                if (!currentRating) { alert('Select rating'); return; }
+                if (comment.length < 10) { alert('Write at least 10 characters'); return; }
+
+                this.disabled = true;
+                fetch(API + '/reviews', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        bookingId: currentBookingId,
+                        rating: currentRating,
+                        comment: comment
+                    })
+                })
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        document.getElementById('submitReviewBtn').disabled = false;
+                        if (data.success) {
+                            closeReview();
+                            loadBookings();
+                        } else {
+                            alert(data.message);
+                        }
+                    });
+            });
+
+            function esc(t) {
+                var d = document.createElement('div');
+                d.textContent = t || '';
+                return d.innerHTML;
+            }
+
+            function formatDate(s) {
+                return new Date(s).toLocaleDateString('en-IN', {
+                    day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+            }
+        })();
+    </script>
 </body>
 
 </html>

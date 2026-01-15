@@ -1,5 +1,5 @@
+// 3. Booking.js
 const mongoose = require('mongoose');
-
 const bookingSchema = new mongoose.Schema({
     userId: {
         type: String,
@@ -59,5 +59,4 @@ const bookingSchema = new mongoose.Schema({
 bookingSchema.index({ userId: 1, createdAt: -1 });
 bookingSchema.index({ providerId: 1 });
 bookingSchema.index({ status: 1 });
-
 module.exports = mongoose.model('Booking', bookingSchema);

@@ -6,6 +6,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register as Provider - Home Services</title>
     <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 0.5rem;
+            padding: 1rem;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            max-height: 220px;
+            overflow-y: auto;
+        }
+
+        .service-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .service-item:hover {
+            border-color: #4F46E5;
+        }
+
+        .service-item.selected {
+            background: #EEF2FF;
+            border-color: #4F46E5;
+        }
+
+        .service-item input {
+            display: none;
+        }
+
+        .service-item label {
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .checkmark {
+            width: 18px;
+            height: 18px;
+            border: 2px solid #d1d5db;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: white;
+            transition: all 0.2s;
+        }
+
+        .service-item.selected .checkmark {
+            background: #4F46E5;
+            border-color: #4F46E5;
+        }
+    </style>
 </head>
 
 <body>
@@ -13,10 +77,10 @@
         <div class="container">
             <a href="/" class="logo">🏠 HomeServices</a>
             <ul class="nav-links">
-                <li><a href="/">Find Services</a></li>
-                <li><a href="/provider-register" class="active">Become a Provider</a></li>
-                <li><a href="/provider-dashboard">Provider Dashboard</a></li>
-                <li><a href="/bookings">My Bookings</a></li>
+                <li><a href="/">Home</a></li>
+                <li><a href="/provider-register" class="active">Register</a></li>
+                <li><a href="/provider-dashboard">Dashboard</a></li>
+                <li><a href="/bookings">Bookings</a></li>
             </ul>
         </div>
     </nav>
@@ -29,41 +93,36 @@
 
         <div id="alertContainer"></div>
 
-        <div id="formCard" class="card" style="max-width:600px;margin:0 auto">
+        <div id="formCard" class="card" style="max-width:550px;margin:0 auto">
             <div class="form-group">
-                <label for="providerName">Business Name *</label>
-                <input type="text" id="providerName" placeholder="e.g., John's Plumbing" maxlength="200">
+                <label>Business Name *</label>
+                <input type="text" id="providerName" placeholder="e.g., John's Plumbing">
             </div>
 
             <div class="form-group">
-                <label for="providerPhone">Phone Number *</label>
+                <label>Phone Number *</label>
                 <input type="tel" id="providerPhone" placeholder="e.g., 9876543210">
             </div>
 
             <div class="form-group">
-                <label for="providerService">Service Category *</label>
-                <select id="providerService">
-                    <option value="">Select a service...</option>
-                </select>
+                <label>Services You Offer * <small style="color:#6b7280">(Select all that apply)</small></label>
+                <div class="services-grid" id="servicesGrid"></div>
             </div>
 
             <div class="form-group">
-                <label for="providerPrice">Price (₹) *</label>
+                <label>Base Price (₹) *</label>
                 <input type="number" id="providerPrice" min="1" placeholder="e.g., 500">
-                <span class="hint">Base price per service call</span>
             </div>
 
             <div class="form-group">
-                <label>Business Location *</label>
-                <button type="button" id="gpsBtn" class="btn btn-secondary btn-block">
-                    📡 Capture GPS Location
-                </button>
+                <label>Your Location *</label>
+                <button type="button" id="gpsBtn" class="btn btn-secondary btn-block">📡 Capture GPS Location</button>
                 <div id="locationStatus" class="location-status hidden"></div>
             </div>
 
             <div class="form-group">
-                <label for="providerAddress">Address</label>
-                <input type="text" id="providerAddress" readonly placeholder="Will be filled from GPS">
+                <label>Address</label>
+                <input type="text" id="providerAddress" readonly placeholder="Auto-filled from GPS">
             </div>
 
             <button type="button" id="submitBtn" class="btn btn-primary btn-lg btn-block" disabled>
@@ -71,15 +130,146 @@
             </button>
         </div>
 
-        <div id="successCard" class="card hidden" style="max-width:600px;margin:2rem auto;text-align:center">
-            <div style="font-size:4rem;margin-bottom:1rem">🎉</div>
+        <div id="successCard" class="card hidden" style="max-width:550px;margin:2rem auto;text-align:center">
+            <div style="font-size:4rem">🎉</div>
             <h2>Registration Successful!</h2>
-            <p class="mt-2" style="color:#6B7280">Your business is now visible to nearby customers.</p>
-            <a href="/provider-dashboard" class="btn btn-primary mt-3">Go to Dashboard</a>
+            <p style="color:#6b7280;margin:1rem 0">Your business is now visible to customers</p>
+            <a href="/provider-dashboard" class="btn btn-primary">Go to Dashboard</a>
         </div>
     </main>
 
-    <script src="js/provider.js"></script>
+    <div class="customer-care-footer">
+        📞 Need Help? Call: <a href="tel:7975205146">7975205146</a>
+    </div>
+
+    <script>
+        (function () {
+            var API = '/api';
+            var location = { lat: null, lng: null, address: '' };
+
+            // Load categories
+            fetch(API + '/providers/categories')
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data.success) {
+                        var grid = document.getElementById('servicesGrid');
+                        var html = '';
+                        data.data.forEach(function (cat) {
+                            html += '<div class="service-item" data-id="' + cat.id + '">' +
+                                '<span class="checkmark">✓</span>' +
+                                '<label>' + cat.icon + ' ' + cat.name + '</label>' +
+                                '</div>';
+                        });
+                        grid.innerHTML = html;
+
+                        // Click handlers
+                        grid.querySelectorAll('.service-item').forEach(function (item) {
+                            item.addEventListener('click', function () {
+                                this.classList.toggle('selected');
+                            });
+                        });
+                    }
+                });
+
+            // GPS capture
+            document.getElementById('gpsBtn').addEventListener('click', function () {
+                var btn = this;
+                var status = document.getElementById('locationStatus');
+
+                if (!navigator.geolocation) {
+                    alert('Geolocation not supported');
+                    return;
+                }
+
+                btn.disabled = true;
+                btn.textContent = '⏳ Detecting...';
+                status.className = 'location-status pending';
+                status.textContent = 'Getting location...';
+
+                navigator.geolocation.getCurrentPosition(
+                    function (pos) {
+                        location.lat = pos.coords.latitude;
+                        location.lng = pos.coords.longitude;
+
+                        // Reverse geocode
+                        fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + location.lat + '&lon=' + location.lng)
+                            .then(function (r) { return r.json(); })
+                            .then(function (data) {
+                                location.address = data.display_name ? data.display_name.split(',').slice(0, 4).join(', ') : 'Location captured';
+                                document.getElementById('providerAddress').value = location.address;
+                                status.className = 'location-status success';
+                                status.textContent = '✅ ' + location.address;
+                                btn.disabled = false;
+                                btn.textContent = '📡 Update Location';
+                                document.getElementById('submitBtn').disabled = false;
+                            });
+                    },
+                    function (err) {
+                        btn.disabled = false;
+                        btn.textContent = '📡 Capture GPS Location';
+                        status.className = 'location-status error';
+                        status.textContent = '❌ ' + (err.code === 1 ? 'Permission denied' : 'Location error');
+                    },
+                    { enableHighAccuracy: true, timeout: 15000 }
+                );
+            });
+
+            // Submit registration
+            document.getElementById('submitBtn').addEventListener('click', function () {
+                var btn = this;
+                var name = document.getElementById('providerName').value.trim();
+                var phone = document.getElementById('providerPhone').value.trim();
+                var price = document.getElementById('providerPrice').value;
+                var address = document.getElementById('providerAddress').value;
+
+                // Get selected services
+                var services = [];
+                document.querySelectorAll('.service-item.selected').forEach(function (item) {
+                    services.push(item.getAttribute('data-id'));
+                });
+
+                // Validation
+                if (!name) { alert('Enter business name'); return; }
+                if (!phone) { alert('Enter phone number'); return; }
+                if (services.length === 0) { alert('Select at least one service'); return; }
+                if (!price || price < 1) { alert('Enter valid price'); return; }
+                if (!location.lat) { alert('Capture GPS location'); return; }
+
+                btn.disabled = true;
+                btn.textContent = '⏳ Registering...';
+
+                fetch(API + '/providers/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        phone: phone,
+                        services: services,
+                        price: parseFloat(price),
+                        address: address,
+                        latitude: location.lat,
+                        longitude: location.lng
+                    })
+                })
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        if (data.success) {
+                            document.getElementById('formCard').classList.add('hidden');
+                            document.getElementById('successCard').classList.remove('hidden');
+                        } else {
+                            alert(data.message || 'Registration failed');
+                            btn.disabled = false;
+                            btn.textContent = '✅ Register as Provider';
+                        }
+                    })
+                    .catch(function () {
+                        alert('Error. Try again.');
+                        btn.disabled = false;
+                        btn.textContent = '✅ Register as Provider';
+                    });
+            });
+        })();
+    </script>
 </body>
 
 </html>

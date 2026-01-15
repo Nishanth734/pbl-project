@@ -6,83 +6,91 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Home Services - Find Nearby Providers</title>
   <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .service-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.5rem;
+    }
+
+    .service-tag {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      background: #f3f4f6;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      color: #4b5563;
+    }
+  </style>
 </head>
 
 <body>
-  <!-- Navigation -->
   <nav class="navbar">
     <div class="container">
       <a href="/" class="logo">🏠 HomeServices</a>
       <ul class="nav-links">
-        <li><a href="/" class="active">Find Services</a></li>
-        <li><a href="/provider-register">Become a Provider</a></li>
-        <li><a href="/provider-dashboard">Provider Dashboard</a></li>
-        <li><a href="/bookings">My Bookings</a></li>
+        <li><a href="/" class="active">Home</a></li>
+        <li><a href="/provider-register">Register</a></li>
+        <li><a href="/provider-dashboard">Provider</a></li>
+        <li><a href="/bookings">Bookings</a></li>
       </ul>
     </div>
   </nav>
 
-  <!-- Main Content -->
   <main class="container">
     <div class="page-header">
       <h1>🔍 Find Home Service Providers</h1>
-      <p>Discover trusted professionals near your location</p>
+      <p>Discover trusted professionals near you</p>
     </div>
 
     <div id="alertContainer"></div>
 
-    <!-- GPS Location Box -->
+    <!-- Location -->
     <div class="location-box">
       <div class="location-header">
         <span class="location-icon">📍</span>
         <div>
           <h3>Your Location</h3>
-          <p>Click the button to detect your current location via GPS</p>
+          <p>Click to detect your GPS location</p>
         </div>
       </div>
-      <button id="gpsBtn" class="btn btn-primary btn-lg">
-        <span>📡</span> Use My GPS Location
-      </button>
-      <div id="locationStatus" class="location-status pending hidden"></div>
+      <button id="gpsBtn" class="btn btn-primary btn-lg">📡 Use My GPS Location</button>
+      <div id="locationStatus" class="location-status hidden"></div>
     </div>
 
-    <!-- Search Filters -->
+    <!-- Filters -->
     <div class="search-filters">
       <div class="filter-row">
         <div class="form-group">
-          <label for="serviceFilter">Service Category</label>
+          <label>Service</label>
           <select id="serviceFilter">
             <option value="all">All Services</option>
           </select>
         </div>
         <div class="form-group">
-          <label for="distanceFilter">Max Distance</label>
+          <label>Distance</label>
           <select id="distanceFilter">
             <option value="10">10 km</option>
             <option value="25" selected>25 km</option>
             <option value="50">50 km</option>
-            <option value="100">100 km</option>
           </select>
         </div>
-        <button id="searchBtn" class="btn btn-primary" disabled>
-          🔍 Search Providers
-        </button>
+        <button id="searchBtn" class="btn btn-primary" disabled>🔍 Search</button>
       </div>
     </div>
 
-    <!-- Providers Section -->
-    <div id="providersSection">
-      <div id="providersLoading" class="loading-overlay hidden">
-        <div class="spinner spinner-lg"></div>
-        <p>Finding providers near you...</p>
-      </div>
-      <div id="providersEmpty" class="empty-state">
-        <div class="icon">🔍</div>
-        <h3>Set Your Location</h3>
-        <p>Click "Use My GPS Location" to find providers near you</p>
-      </div>
-      <div id="providersGrid" class="providers-grid"></div>
+    <!-- Results -->
+    <div id="loading" class="loading-overlay hidden">
+      <div class="spinner spinner-lg"></div>
+      <p>Finding providers...</p>
     </div>
+    <div id="empty" class="empty-state">
+      <div class="icon">🔍</div>
+      <h3>Set Your Location</h3>
+      <p>Click "Use My GPS Location" to find providers</p>
+    </div>
+    <div id="providersGrid" class="providers-grid"></div>
   </main>
 
   <!-- Booking Modal -->
@@ -90,27 +98,26 @@
     <div class="modal">
       <div class="modal-header">
         <h3>📋 Book Service</h3>
-        <button type="button" class="modal-close" id="modalCloseBtn">&times;</button>
+        <button class="modal-close" onclick="closeBooking()">&times;</button>
       </div>
       <div class="modal-body">
-        <div id="bookingProviderInfo"></div>
+        <div id="bookingInfo"></div>
         <div class="form-group">
-          <label for="userName">Your Name *</label>
-          <input type="text" id="userName" placeholder="Enter your full name" required>
+          <label>Your Name *</label>
+          <input type="text" id="bookName" placeholder="Full name">
         </div>
         <div class="form-group">
-          <label for="userPhone">Phone Number *</label>
-          <input type="tel" id="userPhone" placeholder="Enter your phone number" required>
+          <label>Phone *</label>
+          <input type="tel" id="bookPhone" placeholder="Phone number">
         </div>
         <div class="form-group">
-          <label for="userAddress">Service Address</label>
-          <input type="text" id="userAddress" readonly placeholder="Auto-filled from GPS">
-          <span class="hint">Address captured from your GPS location</span>
+          <label>Address</label>
+          <input type="text" id="bookAddress" readonly>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline" id="cancelBookingBtn">Cancel</button>
-        <button type="button" class="btn btn-primary" id="confirmBookingBtn">Confirm Booking</button>
+        <button class="btn btn-outline" onclick="closeBooking()">Cancel</button>
+        <button class="btn btn-primary" id="confirmBtn">Confirm Booking</button>
       </div>
     </div>
   </div>
@@ -119,16 +126,280 @@
   <div id="reviewsModal" class="modal-overlay">
     <div class="modal">
       <div class="modal-header">
-        <h3 id="reviewsModalTitle">⭐ Reviews</h3>
-        <button type="button" class="modal-close" id="reviewsCloseBtn">&times;</button>
+        <h3 id="reviewsTitle">⭐ Reviews</h3>
+        <button class="modal-close" onclick="closeReviews()">&times;</button>
       </div>
-      <div class="modal-body">
-        <div id="reviewsList"></div>
-      </div>
+      <div class="modal-body" id="reviewsBody"></div>
     </div>
   </div>
 
-  <script src="js/app.js"></script>
+  <div class="customer-care-footer">
+    📞 Need Help? Call: <a href="tel:7975205146">7975205146</a>
+  </div>
+
+  <script>
+    (function () {
+      var API = '/api';
+      var loc = { lat: null, lng: null, address: '' };
+      var categories = [];
+      var selectedProvider = null;
+
+      // Load categories
+      fetch(API + '/providers/categories')
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.success) {
+            categories = data.data;
+            var html = '<option value="all">All Services</option>';
+            data.data.forEach(function (c) {
+              html += '<option value="' + c.id + '">' + c.icon + ' ' + c.name + '</option>';
+            });
+            document.getElementById('serviceFilter').innerHTML = html;
+          }
+        });
+
+      // Load saved location
+      try {
+        var saved = JSON.parse(localStorage.getItem('userLocation') || '{}');
+        if (saved.lat && saved.lng) {
+          loc = saved;
+          document.getElementById('locationStatus').className = 'location-status success';
+          document.getElementById('locationStatus').textContent = '✅ ' + loc.address;
+          document.getElementById('searchBtn').disabled = false;
+          searchProviders();
+        }
+      } catch (e) { }
+
+      // GPS
+      document.getElementById('gpsBtn').addEventListener('click', function () {
+        var btn = this;
+        var status = document.getElementById('locationStatus');
+
+        if (!navigator.geolocation) { alert('GPS not supported'); return; }
+
+        btn.disabled = true;
+        btn.textContent = '⏳ Detecting...';
+        status.className = 'location-status pending';
+        status.textContent = 'Getting location...';
+
+        navigator.geolocation.getCurrentPosition(
+          function (pos) {
+            loc.lat = pos.coords.latitude;
+            loc.lng = pos.coords.longitude;
+
+            fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + loc.lat + '&lon=' + loc.lng)
+              .then(function (r) { return r.json(); })
+              .then(function (data) {
+                loc.address = data.display_name ? data.display_name.split(',').slice(0, 4).join(', ') : 'Location captured';
+                localStorage.setItem('userLocation', JSON.stringify(loc));
+                status.className = 'location-status success';
+                status.textContent = '✅ ' + loc.address;
+                btn.disabled = false;
+                btn.textContent = '📡 Update Location';
+                document.getElementById('searchBtn').disabled = false;
+                searchProviders();
+              });
+          },
+          function () {
+            btn.disabled = false;
+            btn.textContent = '📡 Use My GPS Location';
+            status.className = 'location-status error';
+            status.textContent = '❌ Could not get location';
+          },
+          { enableHighAccuracy: true, timeout: 15000 }
+        );
+      });
+
+      // Search
+      document.getElementById('searchBtn').addEventListener('click', searchProviders);
+      document.getElementById('serviceFilter').addEventListener('change', function () {
+        if (loc.lat) searchProviders();
+      });
+      document.getElementById('distanceFilter').addEventListener('change', function () {
+        if (loc.lat) searchProviders();
+      });
+
+      function searchProviders() {
+        var service = document.getElementById('serviceFilter').value;
+        var dist = document.getElementById('distanceFilter').value;
+
+        document.getElementById('providersGrid').innerHTML = '';
+        document.getElementById('empty').classList.add('hidden');
+        document.getElementById('loading').classList.remove('hidden');
+
+        var url = API + '/providers/nearby?latitude=' + loc.lat + '&longitude=' + loc.lng + '&maxDistance=' + dist;
+        if (service !== 'all') url += '&service=' + service;
+
+        fetch(url)
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            document.getElementById('loading').classList.add('hidden');
+            if (data.success && data.data.length > 0) {
+              renderProviders(data.data);
+            } else {
+              document.getElementById('empty').innerHTML = '<div class="icon">😔</div><h3>No providers found</h3><p>Try increasing distance</p>';
+              document.getElementById('empty').classList.remove('hidden');
+            }
+          });
+      }
+
+      function renderProviders(providers) {
+        var html = '';
+        providers.forEach(function (p, i) {
+          var tags = '';
+          if (p.services && p.services.length) {
+            p.services.forEach(function (s) {
+              var cat = findCat(s);
+              tags += '<span class="service-tag">' + cat.icon + ' ' + cat.name + '</span>';
+            });
+          }
+
+          var rating = p.rating || { average: 0, count: 0 };
+          var stars = '';
+          for (var j = 0; j < 5; j++) stars += (j < Math.floor(rating.average)) ? '★' : '☆';
+
+          html += '<div class="provider-card" style="animation-delay:' + (i * 0.1) + 's">' +
+            '<div class="provider-header">' +
+            '<h3>' + esc(p.name) + '</h3>' +
+            '<div class="distance">📍 ' + p.distanceKm + ' km</div>' +
+            '<div class="service-tags">' + tags + '</div>' +
+            '</div>' +
+            '<div class="provider-body">' +
+            '<div class="provider-info">' +
+            '<div class="info-row"><span class="icon">📍</span>' + esc(p.address) + '</div>' +
+            '<div class="info-row"><span class="icon">📞</span>' + esc(p.phone) + '</div>' +
+            '<div class="info-row"><span class="price">₹' + p.price + '</span> <span style="color:#6b7280">per service</span></div>' +
+            '<div class="provider-rating"><span class="stars" style="color:#F59E0B">' + stars + '</span> <span class="count">(' + rating.count + ')</span></div>' +
+            '</div>' +
+            '</div>' +
+            '<div class="provider-footer">' +
+            '<button class="btn btn-outline btn-sm" onclick="viewReviews(\'' + p._id + '\',\'' + escAttr(p.name) + '\')">Reviews</button>' +
+            '<button class="btn btn-primary btn-sm" onclick="openBooking(\'' + p._id + '\',\'' + escAttr(p.name) + '\',' + p.price + ')">Book Now</button>' +
+            '</div>' +
+            '</div>';
+        });
+        document.getElementById('providersGrid').innerHTML = html;
+      }
+
+      function findCat(id) {
+        for (var i = 0; i < categories.length; i++) {
+          if (categories[i].id === id) return categories[i];
+        }
+        return { icon: '🛠️', name: id };
+      }
+
+      // Booking
+      window.openBooking = function (id, name, price) {
+        selectedProvider = { id: id, name: name, price: price };
+        document.getElementById('bookingInfo').innerHTML =
+          '<div style="background:#f3f4f6;padding:1rem;border-radius:8px;margin-bottom:1rem">' +
+          '<h4>' + esc(name) + '</h4>' +
+          '<p style="color:#10B981;font-size:1.25rem;font-weight:600">₹' + price + '</p></div>';
+        document.getElementById('bookAddress').value = loc.address;
+
+        try {
+          var saved = JSON.parse(localStorage.getItem('userInfo') || '{}');
+          document.getElementById('bookName').value = saved.name || '';
+          document.getElementById('bookPhone').value = saved.phone || '';
+        } catch (e) { }
+
+        document.getElementById('bookingModal').classList.add('active');
+      };
+
+      window.closeBooking = function () {
+        document.getElementById('bookingModal').classList.remove('active');
+      };
+
+      document.getElementById('confirmBtn').addEventListener('click', function () {
+        var name = document.getElementById('bookName').value.trim();
+        var phone = document.getElementById('bookPhone').value.trim();
+        var address = document.getElementById('bookAddress').value;
+
+        if (!name) { alert('Enter name'); return; }
+        if (!phone) { alert('Enter phone'); return; }
+
+        localStorage.setItem('userInfo', JSON.stringify({ name: name, phone: phone }));
+
+        this.disabled = true;
+        this.textContent = 'Booking...';
+
+        fetch(API + '/bookings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: phone,
+            userName: name,
+            userPhone: phone,
+            providerId: selectedProvider.id,
+            userAddress: address,
+            latitude: loc.lat,
+            longitude: loc.lng
+          })
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            document.getElementById('confirmBtn').disabled = false;
+            document.getElementById('confirmBtn').textContent = 'Confirm Booking';
+
+            if (data.success) {
+              closeBooking();
+              showAlert('🎉 Booking created! Check "Bookings" page.', 'success');
+            } else {
+              alert(data.message);
+            }
+          });
+      });
+
+      // Reviews
+      window.viewReviews = function (id, name) {
+        document.getElementById('reviewsTitle').textContent = '⭐ Reviews: ' + name;
+        document.getElementById('reviewsBody').innerHTML = '<p>Loading...</p>';
+        document.getElementById('reviewsModal').classList.add('active');
+
+        fetch(API + '/reviews/provider/' + id)
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (data.success && data.data.length > 0) {
+              var html = '';
+              data.data.forEach(function (r) {
+                var s = '';
+                for (var i = 0; i < 5; i++) s += (i < r.rating) ? '★' : '☆';
+                html += '<div class="review-item">' +
+                  '<div class="review-header"><span class="review-author">' + esc(r.userName) + '</span></div>' +
+                  '<div class="review-stars" style="color:#F59E0B">' + s + '</div>' +
+                  '<p class="review-comment">' + esc(r.comment) + '</p>' +
+                  '</div>';
+              });
+              document.getElementById('reviewsBody').innerHTML = html;
+            } else {
+              document.getElementById('reviewsBody').innerHTML = '<p style="text-align:center;color:#6b7280">No reviews yet</p>';
+            }
+          });
+      };
+
+      window.closeReviews = function () {
+        document.getElementById('reviewsModal').classList.remove('active');
+      };
+
+      function showAlert(msg, type) {
+        var div = document.createElement('div');
+        div.className = 'alert alert-' + type;
+        div.textContent = msg;
+        document.getElementById('alertContainer').appendChild(div);
+        setTimeout(function () { div.remove(); }, 5000);
+      }
+
+      function esc(t) {
+        var d = document.createElement('div');
+        d.textContent = t || '';
+        return d.innerHTML;
+      }
+
+      function escAttr(t) {
+        return (t || '').replace(/'/g, "\\'");
+      }
+    })();
+  </script>
 </body>
 
 </html>

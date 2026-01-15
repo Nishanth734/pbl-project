@@ -1,212 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Provider Dashboard - Home Services</title>
   <link rel="stylesheet" href="css/styles.css">
   <style>
-    .dashboard-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-    .provider-profile {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-    .provider-avatar {
-      width: 60px;
-      height: 60px;
-      background: var(--primary);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.5rem;
-      color: white;
-    }
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-    .stat-card {
-      background: var(--white);
-      border-radius: var(--radius-lg);
-      padding: 1.5rem;
-      box-shadow: var(--shadow);
-      text-align: center;
-    }
-    .stat-card .stat-value {
-      font-size: 2rem;
-      font-weight: 700;
-      color: var(--primary);
-    }
-    .stat-card .stat-label {
-      color: var(--gray-500);
-      font-size: 0.9rem;
-    }
-    .stat-card.earnings .stat-value { color: var(--secondary); }
-    .stat-card.pending .stat-value { color: var(--warning); }
-    .dashboard-section {
-      background: var(--white);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow);
-      margin-bottom: 1.5rem;
-    }
-    .section-header {
-      padding: 1rem 1.5rem;
-      border-bottom: 1px solid var(--gray-100);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .section-header h3 {
-      margin: 0;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .section-body {
-      padding: 1.5rem;
-    }
-    .request-card {
-      border: 1px solid var(--gray-200);
-      border-radius: var(--radius);
-      padding: 1rem;
-      margin-bottom: 1rem;
-      transition: var(--transition);
-    }
-    .request-card:hover {
-      border-color: var(--primary);
-      box-shadow: var(--shadow);
-    }
-    .request-card:last-child { margin-bottom: 0; }
-    .client-info {
+    .stats-row {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-box {
+      background: white;
+      padding: 1.25rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      text-align: center;
+    }
+
+    .stat-box .num {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #4F46E5;
+    }
+
+    .stat-box .label {
+      color: #6b7280;
+      font-size: 0.9rem;
+    }
+
+    .stat-box.pending .num {
+      color: #F59E0B;
+    }
+
+    .stat-box.earnings .num {
+      color: #10B981;
+    }
+
+    .section-card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+
+    .section-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid #f3f4f6;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section-header h3 {
+      margin: 0;
+    }
+
+    .section-body {
+      padding: 1.25rem;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .tab {
+      padding: 0.4rem 0.8rem;
+      border: none;
+      background: #f3f4f6;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .tab.active {
+      background: #4F46E5;
+      color: white;
+    }
+
+    .request-item {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .request-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .client-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
       gap: 0.75rem;
       margin: 0.75rem 0;
     }
-    .client-info .info-item {
-      display: flex;
-      flex-direction: column;
-    }
-    .client-info .label {
-      font-size: 0.75rem;
-      color: var(--gray-500);
+
+    .client-row .item .lbl {
+      font-size: 0.7rem;
+      color: #9ca3af;
       text-transform: uppercase;
     }
-    .client-info .value {
+
+    .client-row .item .val {
       font-weight: 500;
-      color: var(--gray-800);
     }
+
     .request-actions {
       display: flex;
       gap: 0.5rem;
-      margin-top: 1rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--gray-100);
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid #f3f4f6;
     }
-    .tab-buttons {
-      display: flex;
-      gap: 0.5rem;
-    }
-    .tab-btn {
-      padding: 0.5rem 1rem;
-      border: none;
-      background: var(--gray-100);
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      font-weight: 500;
-      transition: var(--transition);
-    }
-    .tab-btn.active {
-      background: var(--primary);
-      color: white;
-    }
-    .tab-btn:hover:not(.active) {
-      background: var(--gray-200);
-    }
-    /* Add missing alert and spinner styles if not in styles.css */
-    .alert {
-      padding: 1rem;
-      margin-bottom: 1rem;
-      border-radius: var(--radius);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      animation: slideIn 0.3s ease-out;
-    }
-    .alert-success { background: #dcfce7; color: #166534; }
-    .alert-error { background: #fee2e2; color: #991b1b; }
-    @keyframes slideIn {
-      from { transform: translateY(-20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-    .spinner {
-      width: 20px;
-      height: 20px;
-      border: 3px solid rgba(255,255,255,0.3);
-      border-radius: 50%;
-      border-top-color: white;
-      animation: spin 1s linear infinite;
-      display: inline-block;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    .hidden { display: none !important; }
-    .empty-state {
-      text-align: center;
-      padding: 2rem;
-      color: var(--gray-500);
-    }
-    .empty-state .icon {
-      font-size: 3rem;
-      margin-bottom: 1rem;
-    }
-    .review-item {
-      padding: 1rem 0;
-      border-bottom: 1px solid var(--gray-100);
-    }
-    .review-item:last-child { border-bottom: none; }
-    .review-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 0.5rem;
-    }
-    .review-author { font-weight: 600; }
-    .review-date { font-size: 0.8rem; color: var(--gray-500); }
-    .review-stars { color: var(--warning); margin-bottom: 0.5rem; }
-    .booking-status {
-      padding: 0.25rem 0.5rem;
-      border-radius: 1rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: capitalize;
-    }
-    .booking-status.requested { background: #fef9c3; color: #854d0e; }
-    .booking-status.accepted { background: #dcfce7; color: #166534; }
-    .booking-status.completed { background: #dbeafe; color: #1e40af; }
-    .booking-status.cancelled { background: #fee2e2; color: #991b1b; }
   </style>
 </head>
+
 <body>
   <nav class="navbar">
     <div class="container">
       <a href="/" class="logo">🏠 HomeServices</a>
       <ul class="nav-links">
-        <li><a href="/">Find Services</a></li>
+        <li><a href="/">Home</a></li>
         <li><a href="/provider-register">Register</a></li>
-        <li><a href="/provider-dashboard" class="active">Provider Dashboard</a></li>
-        <li><a href="/bookings">My Bookings</a></li>
+        <li><a href="/provider-dashboard" class="active">Dashboard</a></li>
+        <li><a href="/bookings">Bookings</a></li>
       </ul>
     </div>
   </nav>
@@ -214,101 +138,295 @@
   <main class="container">
     <div id="alertContainer"></div>
 
-    <!-- Login Section -->
-    <div id="loginSection" class="card" style="max-width:450px;margin:2rem auto">
-      <h3 style="margin-bottom:1rem">🔐 Provider Login</h3>
-      <p style="color:var(--gray-500);margin-bottom:1.5rem">Enter your registered phone number to access dashboard</p>
+    <!-- Login -->
+    <div id="loginBox" class="card" style="max-width:400px;margin:2rem auto;text-align:center">
+      <h3>🔐 Provider Login</h3>
+      <p style="color:#6b7280;margin:1rem 0">Enter your registered phone number</p>
       <div class="form-group">
-        <label for="providerPhone">Phone Number</label>
-        <input type="tel" id="providerPhone" placeholder="Enter your registered phone">
+        <input type="tel" id="loginPhone" placeholder="Phone number">
       </div>
       <button id="loginBtn" class="btn btn-primary btn-block">Access Dashboard</button>
-      <p style="text-align:center;margin-top:1rem;color:var(--gray-500)">
-        Not registered? <a href="/provider-register" style="color:var(--primary)">Register here</a>
+      <p style="margin-top:1rem;color:#6b7280">
+        Not registered? <a href="/provider-register">Register here</a>
       </p>
     </div>
 
-    <!-- Dashboard Section (hidden initially) -->
-    <div id="dashboardSection" class="hidden">
-      <!-- Dashboard Header -->
-      <div class="dashboard-header">
-        <div class="provider-profile">
-          <div class="provider-avatar" id="providerAvatar">🛠️</div>
-          <div>
-            <h2 id="providerName" style="margin:0">Provider Name</h2>
-            <p id="providerService" style="margin:0;color:var(--gray-500)">Service Type</p>
-          </div>
+    <!-- Dashboard -->
+    <div id="dashboard" class="hidden">
+      <div class="page-header">
+        <h1 id="welcomeMsg">👋 Welcome</h1>
+        <p id="providerServices">Your services</p>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="num" id="statTotal">0</div>
+          <div class="label">Total Bookings</div>
         </div>
-        <div>
-          <span id="providerRating" style="font-size:1.25rem;color:var(--warning)">★★★★☆</span>
-          <span id="ratingCount" style="color:var(--gray-500)">(0 reviews)</span>
+        <div class="stat-box pending">
+          <div class="num" id="statPending">0</div>
+          <div class="label">Pending</div>
+        </div>
+        <div class="stat-box">
+          <div class="num" id="statDone">0</div>
+          <div class="label">Completed</div>
+        </div>
+        <div class="stat-box earnings">
+          <div class="num" id="statEarn">₹0</div>
+          <div class="label">Earnings</div>
         </div>
       </div>
 
-      <!-- Stats Grid -->
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-value" id="totalBookings">0</div>
-          <div class="stat-label">Total Bookings</div>
-        </div>
-        <div class="stat-card pending">
-          <div class="stat-value" id="pendingRequests">0</div>
-          <div class="stat-label">Pending Requests</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="completedJobs">0</div>
-          <div class="stat-label">Completed Jobs</div>
-        </div>
-        <div class="stat-card earnings">
-          <div class="stat-value" id="totalEarnings">₹0</div>
-          <div class="stat-label">Total Earnings</div>
-        </div>
-      </div>
-
-      <!-- Booking Requests Section -->
-      <div class="dashboard-section">
+      <!-- Bookings -->
+      <div class="section-card">
         <div class="section-header">
           <h3>📋 Booking Requests</h3>
-          <div class="tab-buttons">
-            <button class="tab-btn active" data-status="requested">Pending</button>
-            <button class="tab-btn" data-status="accepted">Accepted</button>
-            <button class="tab-btn" data-status="completed">Completed</button>
-            <button class="tab-btn" data-status="all">All</button>
+          <div class="tabs">
+            <button class="tab active" data-f="requested">Pending</button>
+            <button class="tab" data-f="accepted">Accepted</button>
+            <button class="tab" data-f="completed">Completed</button>
+            <button class="tab" data-f="all">All</button>
           </div>
         </div>
         <div class="section-body">
-          <div id="bookingsLoading" class="loading-overlay hidden">
-            <div class="spinner"></div>
-          </div>
-          <div id="bookingRequestsList"></div>
+          <div id="bookingsLoading" class="hidden" style="text-align:center;padding:2rem">Loading...</div>
+          <div id="bookingsList"></div>
           <div id="noBookings" class="empty-state hidden">
             <div class="icon">📭</div>
-            <h3>No bookings found</h3>
+            <h3>No bookings</h3>
           </div>
         </div>
       </div>
 
-      <!-- Reviews Section -->
-      <div class="dashboard-section">
+      <!-- Reviews -->
+      <div class="section-card">
         <div class="section-header">
-          <h3>⭐ Customer Reviews</h3>
-          <span id="reviewsCount" style="color:var(--gray-500)">0 reviews</span>
+          <h3>⭐ Reviews</h3>
+          <span id="reviewCount" style="color:#6b7280">0 reviews</span>
         </div>
         <div class="section-body">
-          <div id="reviewsLoading" class="loading-overlay hidden">
-            <div class="spinner"></div>
-          </div>
           <div id="reviewsList"></div>
           <div id="noReviews" class="empty-state hidden">
             <div class="icon">📝</div>
             <h3>No reviews yet</h3>
-            <p>Complete jobs to get customer reviews</p>
           </div>
         </div>
       </div>
     </div>
   </main>
 
-  <script src="js/provider-dashboard.js"></script>
+  <div class="customer-care-footer">
+    📞 Need Help? Call: <a href="tel:7975205146">7975205146</a>
+  </div>
+
+  <script>
+    (function () {
+      var API = '/api';
+      var provider = null;
+      var bookings = [];
+      var filter = 'requested';
+
+      // Check saved login
+      try {
+        var saved = localStorage.getItem('providerPhone');
+        if (saved) {
+          document.getElementById('loginPhone').value = saved;
+        }
+      } catch (e) { }
+
+      document.getElementById('loginBtn').addEventListener('click', login);
+      document.getElementById('loginPhone').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') login();
+      });
+
+      // Tab clicks
+      document.querySelectorAll('.tab').forEach(function (t) {
+        t.addEventListener('click', function () {
+          document.querySelectorAll('.tab').forEach(function (x) { x.classList.remove('active'); });
+          this.classList.add('active');
+          filter = this.getAttribute('data-f');
+          renderBookings();
+        });
+      });
+
+      function login() {
+        var phone = document.getElementById('loginPhone').value.trim();
+        if (!phone) { alert('Enter phone'); return; }
+
+        document.getElementById('loginBtn').disabled = true;
+        document.getElementById('loginBtn').textContent = 'Loading...';
+
+        fetch(API + '/providers/dashboard/' + encodeURIComponent(phone))
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            document.getElementById('loginBtn').disabled = false;
+            document.getElementById('loginBtn').textContent = 'Access Dashboard';
+
+            if (data.success && data.data) {
+              provider = data.data;
+              localStorage.setItem('providerPhone', phone);
+              showDashboard();
+            } else {
+              alert('Provider not found');
+            }
+          })
+          .catch(function () {
+            document.getElementById('loginBtn').disabled = false;
+            document.getElementById('loginBtn').textContent = 'Access Dashboard';
+            alert('Error loading');
+          });
+      }
+
+      function showDashboard() {
+        document.getElementById('loginBox').classList.add('hidden');
+        document.getElementById('dashboard').classList.remove('hidden');
+
+        document.getElementById('welcomeMsg').textContent = '👋 ' + provider.name;
+        var servicesText = provider.services ? provider.services.join(', ') : 'N/A';
+        document.getElementById('providerServices').textContent = 'Services: ' + servicesText;
+
+        loadBookings();
+        loadReviews();
+      }
+
+      function loadBookings() {
+        document.getElementById('bookingsLoading').classList.remove('hidden');
+        document.getElementById('bookingsList').innerHTML = '';
+
+        fetch(API + '/providers/' + provider._id + '/bookings')
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            document.getElementById('bookingsLoading').classList.add('hidden');
+            if (data.success) {
+              bookings = data.data || [];
+              updateStats();
+              renderBookings();
+            }
+          });
+      }
+
+      function updateStats() {
+        var total = bookings.length;
+        var pending = bookings.filter(function (b) { return b.status === 'requested'; }).length;
+        var done = bookings.filter(function (b) { return b.status === 'completed'; }).length;
+        var earn = bookings.filter(function (b) { return b.status === 'completed'; })
+          .reduce(function (s, b) { return s + b.price; }, 0);
+
+        document.getElementById('statTotal').textContent = total;
+        document.getElementById('statPending').textContent = pending;
+        document.getElementById('statDone').textContent = done;
+        document.getElementById('statEarn').textContent = '₹' + earn;
+      }
+
+      function renderBookings() {
+        var list = bookings;
+        if (filter !== 'all') {
+          list = bookings.filter(function (b) { return b.status === filter; });
+        }
+
+        if (list.length === 0) {
+          document.getElementById('bookingsList').innerHTML = '';
+          document.getElementById('noBookings').classList.remove('hidden');
+          return;
+        }
+
+        document.getElementById('noBookings').classList.add('hidden');
+
+        var html = '';
+        list.forEach(function (b) {
+          var showAccept = (b.status === 'requested');
+          var showChat = (b.status === 'accepted' || b.status === 'completed');
+
+          html += '<div class="request-item">' +
+            '<div style="display:flex;justify-content:space-between">' +
+            '<strong>' + esc(b.userName) + '</strong>' +
+            '<span class="booking-status ' + b.status + '">' + b.status + '</span>' +
+            '</div>' +
+            '<div class="client-row">' +
+            '<div class="item"><div class="lbl">Phone</div><div class="val">' + esc(b.userPhone) + '</div></div>' +
+            '<div class="item"><div class="lbl">Service</div><div class="val">' + esc(b.service) + '</div></div>' +
+            '<div class="item"><div class="lbl">Price</div><div class="val" style="color:#10B981">₹' + b.price + '</div></div>' +
+            '<div class="item"><div class="lbl">Address</div><div class="val">' + esc(b.userAddress || 'N/A') + '</div></div>' +
+            '</div>' +
+            '<div class="request-actions">' +
+            (showChat ? '<a href="/chat?bookingId=' + b._id + '&userType=provider&userId=' + encodeURIComponent(provider.phone) + '&userName=' + encodeURIComponent(provider.name) + '" class="btn btn-secondary btn-sm">💬 Chat</a>' : '') +
+            (showAccept ? '<button class="btn btn-primary btn-sm" onclick="acceptBooking(\'' + b._id + '\')">✅ Accept</button>' +
+              '<button class="btn btn-danger btn-sm" onclick="declineBooking(\'' + b._id + '\')">❌ Decline</button>' : '') +
+            '</div>' +
+            '</div>';
+        });
+
+        document.getElementById('bookingsList').innerHTML = html;
+      }
+
+      window.acceptBooking = function (id) {
+        if (!confirm('Accept this booking?')) return;
+        updateBookingStatus(id, 'accepted');
+      };
+
+      window.declineBooking = function (id) {
+        if (!confirm('Decline this booking?')) return;
+        updateBookingStatus(id, 'cancelled');
+      };
+
+      function updateBookingStatus(id, status) {
+        fetch(API + '/bookings/' + id + '/status', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: status })
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (data.success) {
+              loadBookings();
+            } else {
+              alert(data.message);
+            }
+          });
+      }
+
+      function loadReviews() {
+        fetch(API + '/reviews/provider/' + provider._id)
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (data.success && data.data.length > 0) {
+              document.getElementById('reviewCount').textContent = data.data.length + ' reviews';
+              var html = '';
+              data.data.forEach(function (r) {
+                html += '<div class="review-item">' +
+                  '<div class="review-header">' +
+                  '<span class="review-author">' + esc(r.userName) + '</span>' +
+                  '<span class="review-date">' + formatDate(r.createdAt) + '</span>' +
+                  '</div>' +
+                  '<div class="review-stars">' + stars(r.rating) + '</div>' +
+                  '<p class="review-comment">' + esc(r.comment) + '</p>' +
+                  '</div>';
+              });
+              document.getElementById('reviewsList').innerHTML = html;
+              document.getElementById('noReviews').classList.add('hidden');
+            } else {
+              document.getElementById('noReviews').classList.remove('hidden');
+            }
+          });
+      }
+
+      function stars(n) {
+        var s = '';
+        for (var i = 0; i < 5; i++) s += (i < n) ? '★' : '☆';
+        return '<span style="color:#F59E0B">' + s + '</span>';
+      }
+
+      function esc(t) {
+        var d = document.createElement('div');
+        d.textContent = t || '';
+        return d.innerHTML;
+      }
+
+      function formatDate(s) {
+        return new Date(s).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+      }
+    })();
+  </script>
 </body>
+
 </html>

@@ -77,6 +77,8 @@
         } catch (e) { }
     }
 
+    // ===== SCREENSHOT START =====
+    // This function handles provider login by verifying the phone number
     function loginProvider() {
         var phone = elements.providerPhone.value.trim();
 
@@ -109,6 +111,7 @@
                 console.error(err);
             });
     }
+    // ===== SCREENSHOT END =====
 
     function showDashboard() {
         elements.loginSection.classList.add('hidden');
@@ -256,6 +259,8 @@
     }
 
     // Update booking status (global)
+    // ===== SCREENSHOT START =====
+    // This function allows providers to Accept or Mark Jobs as Completed
     window.updateBooking = function (bookingId, status) {
         var msgs = {
             'accepted': 'Accept this booking?',
@@ -283,6 +288,7 @@
                 showAlert('Failed to update booking', 'error');
             });
     };
+    // ===== SCREENSHOT END =====
 
     // Utility functions
     function renderStars(rating) {

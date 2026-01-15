@@ -12,163 +12,122 @@ const SERVICE_CATEGORIES = [
     { id: 'appliance-repair', name: 'Appliance Repair', icon: '🔌' },
     { id: 'gardening', name: 'Gardening', icon: '🌱' },
     { id: 'pest-control', name: 'Pest Control', icon: '🐛' },
-    { id: 'moving', name: 'Moving', icon: '📦' },
+    { id: 'moving', name: 'Moving & Packing', icon: '📦' },
     { id: 'handyman', name: 'Handyman', icon: '🛠️' }
 ];
 
-// GET /api/providers/categories - Get service categories
+// GET categories
 router.get('/categories', (req, res) => {
-    res.json({
-        success: true,
-        data: SERVICE_CATEGORIES
-    });
+    res.json({ success: true, data: SERVICE_CATEGORIES });
 });
 
-// POST /api/providers/register - Register new provider with GPS
+// POST register provider
 router.post('/register', async (req, res) => {
     try {
-        const { name, phone, service, price, latitude, longitude, address } = req.body;
+        const { name, phone, services, price, address, latitude, longitude } = req.body;
 
-        // Validation
-        if (!name || !phone || !service || !price || !latitude || !longitude || !address) {
+        // Handle both array and single service
+        let servicesList = services;
+        if (typeof services === 'string') {
+            servicesList = [services];
+        }
+
+        if (!name || !phone || !servicesList || servicesList.length === 0 || !price || !latitude || !longitude) {
             return res.status(400).json({
                 success: false,
-                message: 'All fields are required: name, phone, service, price, latitude, longitude, address'
+                message: 'All fields required. Select at least one service.'
             });
         }
 
-        // Validate coordinates
-        const lat = parseFloat(latitude);
-        const lng = parseFloat(longitude);
-
-        if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        const existingProvider = await Provider.findOne({ phone });
+        if (existingProvider) {
             return res.status(400).json({
                 success: false,
-                message: 'Invalid coordinates'
+                message: 'Phone number already registered'
             });
         }
 
-        // Create provider
         const provider = await Provider.create({
             name,
             phone,
-            service,
+            services: servicesList,
             price: parseFloat(price),
-            address,
+            address: address || 'Location via GPS',
             location: {
                 type: 'Point',
-                coordinates: [lng, lat] // GeoJSON: [longitude, latitude]
+                coordinates: [parseFloat(longitude), parseFloat(latitude)]
             }
         });
 
         res.status(201).json({
             success: true,
-            message: 'Provider registered successfully',
-            data: {
-                id: provider._id,
-                name: provider.name,
-                service: provider.service,
-                price: provider.price,
-                address: provider.address,
-                rating: provider.rating
-            }
+            message: 'Registration successful',
+            data: provider
         });
     } catch (error) {
-        console.error('Register provider error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error during registration'
-        });
+        console.error('Register error:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 });
 
-// GET /api/providers/nearby - Search providers near user location
+// GET nearby providers
 router.get('/nearby', async (req, res) => {
     try {
-        const { latitude, longitude, service, maxDistance = 50 } = req.query;
+        const { latitude, longitude, maxDistance, service } = req.query;
 
-        // Validation
         if (!latitude || !longitude) {
             return res.status(400).json({
                 success: false,
-                message: 'Latitude and longitude are required'
+                message: 'Latitude and longitude required'
             });
         }
 
         const lat = parseFloat(latitude);
         const lng = parseFloat(longitude);
+        const maxDist = parseInt(maxDistance) || 25;
 
-        if (isNaN(lat) || isNaN(lng)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Invalid coordinates'
-            });
-        }
-
-        const maxDist = parseFloat(maxDistance) * 1000; // Convert km to meters
-
-        // Build match filter
-        const matchFilter = { isActive: true };
-        if (service && service !== 'all') {
-            matchFilter.service = service;
-        }
-
-        // GEOSPATIAL QUERY - $geoNear aggregation
-        const providers = await Provider.aggregate([
+        let pipeline = [
             {
                 $geoNear: {
-                    near: {
-                        type: 'Point',
-                        coordinates: [lng, lat]
-                    },
+                    near: { type: 'Point', coordinates: [lng, lat] },
                     distanceField: 'distance',
-                    maxDistance: maxDist,
-                    spherical: true,
-                    query: matchFilter
+                    maxDistance: maxDist * 1000,
+                    spherical: true
                 }
             },
-            {
-                $addFields: {
-                    distanceKm: {
-                        $round: [{ $divide: ['$distance', 1000] }, 1]
-                    }
-                }
-            },
-            { $sort: { distance: 1 } }, // Sort by nearest
-            { $limit: 50 },
-            {
-                $project: {
-                    _id: 1,
-                    name: 1,
-                    phone: 1,
-                    service: 1,
-                    price: 1,
-                    address: 1,  // Show address, NOT coordinates
-                    rating: 1,
-                    distanceKm: 1,
-                    createdAt: 1
-                }
-            }
-        ]);
+            { $match: { isActive: true } }
+        ];
+
+        // Filter by service if provided
+        if (service && service !== 'all') {
+            pipeline.push({ $match: { services: service } });
+        }
+
+        pipeline.push({ $sort: { distance: 1 } });
+        pipeline.push({ $limit: 50 });
+
+        const providers = await Provider.aggregate(pipeline);
+
+        const providersWithDistance = providers.map(p => ({
+            ...p,
+            distanceKm: (p.distance / 1000).toFixed(1)
+        }));
 
         res.json({
             success: true,
-            count: providers.length,
-            data: providers
+            count: providersWithDistance.length,
+            data: providersWithDistance
         });
     } catch (error) {
         console.error('Nearby search error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error during search'
-        });
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 });
 
-// GET /api/providers/:id - Get single provider
-router.get('/:id', async (req, res) => {
+// GET provider by phone (for dashboard login)
+router.get('/dashboard/:phone', async (req, res) => {
     try {
-        const provider = await Provider.findById(req.params.id).select('-location');
+        const provider = await Provider.findOne({ phone: req.params.phone });
 
         if (!provider) {
             return res.status(404).json({
@@ -177,63 +136,24 @@ router.get('/:id', async (req, res) => {
             });
         }
 
-        res.json({
-            success: true,
-            data: provider
-        });
-    } catch (error) {
-        console.error('Get provider error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error'
-        });
-    }
-});
-
-// GET /api/providers/dashboard/:phone - Get provider by phone for dashboard
-router.get('/dashboard/:phone', async (req, res) => {
-    try {
-        const provider = await Provider.findOne({ phone: req.params.phone });
-
-        if (!provider) {
-            return res.status(404).json({
-                success: false,
-                message: 'Provider not found with this phone number'
-            });
-        }
-
-        res.json({
-            success: true,
-            data: provider
-        });
+        res.json({ success: true, data: provider });
     } catch (error) {
         console.error('Dashboard login error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error'
-        });
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 });
 
-// GET /api/providers/:id/bookings - Get all bookings for a provider
+// GET provider bookings
 router.get('/:id/bookings', async (req, res) => {
     try {
         const Booking = require('../models/Booking');
-
         const bookings = await Booking.find({ providerId: req.params.id })
             .sort({ createdAt: -1 });
 
-        res.json({
-            success: true,
-            count: bookings.length,
-            data: bookings
-        });
+        res.json({ success: true, count: bookings.length, data: bookings });
     } catch (error) {
-        console.error('Provider bookings error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error'
-        });
+        console.error('Get bookings error:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 });
 
