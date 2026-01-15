@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Provider Dashboard - Home Services</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .provider-profile {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .provider-avatar {
+      width: 60px;
+      height: 60px;
+      background: var(--primary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: white;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+    .stat-card .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .stat-card .stat-label {
+      color: var(--gray-500);
+      font-size: 0.9rem;
+    }
+    .stat-card.earnings .stat-value { color: var(--secondary); }
+    .stat-card.pending .stat-value { color: var(--warning); }
+    .dashboard-section {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      margin-bottom: 1.5rem;
+    }
+    .section-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--gray-100);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .section-header h3 {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .section-body {
+      padding: 1.5rem;
+    }
+    .request-card {
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+      padding: 1rem;
+      margin-bottom: 1rem;
+      transition: var(--transition);
+    }
+    .request-card:hover {
+      border-color: var(--primary);
+      box-shadow: var(--shadow);
+    }
+    .request-card:last-child { margin-bottom: 0; }
+    .client-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.75rem;
+      margin: 0.75rem 0;
+    }
+    .client-info .info-item {
+      display: flex;
+      flex-direction: column;
+    }
+    .client-info .label {
+      font-size: 0.75rem;
+      color: var(--gray-500);
+      text-transform: uppercase;
+    }
+    .client-info .value {
+      font-weight: 500;
+      color: var(--gray-800);
+    }
+    .request-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--gray-100);
+    }
+    .tab-buttons {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .tab-btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      background: var(--gray-100);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-weight: 500;
+      transition: var(--transition);
+    }
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+    .tab-btn:hover:not(.active) {
+      background: var(--gray-200);
+    }
+    /* Add missing alert and spinner styles if not in styles.css */
+    .alert {
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      animation: slideIn 0.3s ease-out;
+    }
+    .alert-success { background: #dcfce7; color: #166534; }
+    .alert-error { background: #fee2e2; color: #991b1b; }
+    @keyframes slideIn {
+      from { transform: translateY(-20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .hidden { display: none !important; }
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      color: var(--gray-500);
+    }
+    .empty-state .icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    .review-item {
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .review-item:last-child { border-bottom: none; }
+    .review-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+    .review-author { font-weight: 600; }
+    .review-date { font-size: 0.8rem; color: var(--gray-500); }
+    .review-stars { color: var(--warning); margin-bottom: 0.5rem; }
+    .booking-status {
+      padding: 0.25rem 0.5rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+    .booking-status.requested { background: #fef9c3; color: #854d0e; }
+    .booking-status.accepted { background: #dcfce7; color: #166534; }
+    .booking-status.completed { background: #dbeafe; color: #1e40af; }
+    .booking-status.cancelled { background: #fee2e2; color: #991b1b; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <a href="/" class="logo">🏠 HomeServices</a>
+      <ul class="nav-links">
+        <li><a href="/">Find Services</a></li>
+        <li><a href="/provider-register">Register</a></li>
+        <li><a href="/provider-dashboard" class="active">Provider Dashboard</a></li>
+        <li><a href="/bookings">My Bookings</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="container">
+    <div id="alertContainer"></div>
+
+    <!-- Login Section -->
+    <div id="loginSection" class="card" style="max-width:450px;margin:2rem auto">
+      <h3 style="margin-bottom:1rem">🔐 Provider Login</h3>
+      <p style="color:var(--gray-500);margin-bottom:1.5rem">Enter your registered phone number to access dashboard</p>
+      <div class="form-group">
+        <label for="providerPhone">Phone Number</label>
+        <input type="tel" id="providerPhone" placeholder="Enter your registered phone">
+      </div>
+      <button id="loginBtn" class="btn btn-primary btn-block">Access Dashboard</button>
+      <p style="text-align:center;margin-top:1rem;color:var(--gray-500)">
+        Not registered? <a href="/provider-register" style="color:var(--primary)">Register here</a>
+      </p>
+    </div>
+
+    <!-- Dashboard Section (hidden initially) -->
+    <div id="dashboardSection" class="hidden">
+      <!-- Dashboard Header -->
+      <div class="dashboard-header">
+        <div class="provider-profile">
+          <div class="provider-avatar" id="providerAvatar">🛠️</div>
+          <div>
+            <h2 id="providerName" style="margin:0">Provider Name</h2>
+            <p id="providerService" style="margin:0;color:var(--gray-500)">Service Type</p>
+          </div>
+        </div>
+        <div>
+          <span id="providerRating" style="font-size:1.25rem;color:var(--warning)">★★★★☆</span>
+          <span id="ratingCount" style="color:var(--gray-500)">(0 reviews)</span>
+        </div>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="totalBookings">0</div>
+          <div class="stat-label">Total Bookings</div>
+        </div>
+        <div class="stat-card pending">
+          <div class="stat-value" id="pendingRequests">0</div>
+          <div class="stat-label">Pending Requests</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="completedJobs">0</div>
+          <div class="stat-label">Completed Jobs</div>
+        </div>
+        <div class="stat-card earnings">
+          <div class="stat-value" id="totalEarnings">₹0</div>
+          <div class="stat-label">Total Earnings</div>
+        </div>
+      </div>
+
+      <!-- Booking Requests Section -->
+      <div class="dashboard-section">
+        <div class="section-header">
+          <h3>📋 Booking Requests</h3>
+          <div class="tab-buttons">
+            <button class="tab-btn active" data-status="requested">Pending</button>
+            <button class="tab-btn" data-status="accepted">Accepted</button>
+            <button class="tab-btn" data-status="completed">Completed</button>
+            <button class="tab-btn" data-status="all">All</button>
+          </div>
+        </div>
+        <div class="section-body">
+          <div id="bookingsLoading" class="loading-overlay hidden">
+            <div class="spinner"></div>
+          </div>
+          <div id="bookingRequestsList"></div>
+          <div id="noBookings" class="empty-state hidden">
+            <div class="icon">📭</div>
+            <h3>No bookings found</h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reviews Section -->
+      <div class="dashboard-section">
+        <div class="section-header">
+          <h3>⭐ Customer Reviews</h3>
+          <span id="reviewsCount" style="color:var(--gray-500)">0 reviews</span>
+        </div>
+        <div class="section-body">
+          <div id="reviewsLoading" class="loading-overlay hidden">
+            <div class="spinner"></div>
+          </div>
+          <div id="reviewsList"></div>
+          <div id="noReviews" class="empty-state hidden">
+            <div class="icon">📝</div>
+            <h3>No reviews yet</h3>
+            <p>Complete jobs to get customer reviews</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/provider-dashboard.js"></script>
+</body>
+</html>
